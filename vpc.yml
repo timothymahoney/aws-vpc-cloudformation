@@ -1,0 +1,373 @@
+---
+AWSTemplateFormatVersion: 2010-09-09
+Description: Public and Privately Routed VPC with 3 Public and 3 Private Subnets
+Parameters:
+  Environment:
+    Type : 'AWS::SSM::Parameter::Value<String>'
+    Default: "Environment"
+  CidrBlock:
+    Type : 'AWS::SSM::Parameter::Value<String>'
+    Default: "CidrBlock"
+  VPNSGAllowIP:
+    Type : 'AWS::SSM::Parameter::Value<String>'
+    Default: "VPNSGAllowIP"
+
+Resources:
+  Ec2Vpc:
+    Type: 'AWS::EC2::VPC'
+    Properties:
+      EnableDnsSupport: "true"
+      EnableDnsHostnames: "true"
+      CidrBlock: !Join
+        - ''
+        - - !Ref CidrBlock
+          - "/16"
+      Tags:
+        - Key: Name
+          Value: !Join
+            - '-'
+            - - !Ref Environment
+              - vpc
+
+  Ec2SubnetPublic1:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref Ec2Vpc
+      MapPublicIpOnLaunch: "true"
+      AvailabilityZone: !Select
+        - 0
+        - Fn::GetAZs: !Ref 'AWS::Region'
+      CidrBlock: !Select [0, !Cidr [!GetAtt Ec2Vpc.CidrBlock, 16, 12]]
+      Tags:
+        - Key: Name
+          Value: !Join
+            - '-'
+            - - !Ref Environment
+              - public
+              - !Select
+                - 0
+                - Fn::GetAZs: !Ref 'AWS::Region'
+
+  Ec2SubnetPublic2:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref Ec2Vpc
+      MapPublicIpOnLaunch: "true"
+      AvailabilityZone: !Select
+        - 1
+        - Fn::GetAZs: !Ref 'AWS::Region'
+      CidrBlock: !Select [1, !Cidr [!GetAtt Ec2Vpc.CidrBlock, 16, 12]]
+      Tags:
+        - Key: Name
+          Value: !Join
+            - '-'
+            - - !Ref Environment
+              - public
+              - !Select
+                - 1
+                - Fn::GetAZs: !Ref 'AWS::Region'
+
+  Ec2SubnetPublic3:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref Ec2Vpc
+      MapPublicIpOnLaunch: "true"
+      AvailabilityZone: !Select
+        - 2
+        - Fn::GetAZs: !Ref 'AWS::Region'
+      CidrBlock: !Select [2, !Cidr [!GetAtt Ec2Vpc.CidrBlock, 16, 12]]
+      Tags:
+        - Key: Name
+          Value: !Join
+            - '-'
+            - - !Ref Environment
+              - public
+              - !Select
+                - 2
+                - Fn::GetAZs: !Ref 'AWS::Region'
+
+  Ec2SubnetPrivate1:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref Ec2Vpc
+      AvailabilityZone: !Select
+        - 0
+        - Fn::GetAZs: !Ref 'AWS::Region'
+      CidrBlock: !Select [3, !Cidr [!GetAtt Ec2Vpc.CidrBlock, 16, 12]]
+      Tags:
+        - Key: Name
+          Value: !Join
+            - '-'
+            - - !Ref Environment
+              - private
+              - !Select
+                - 0
+                - Fn::GetAZs: !Ref 'AWS::Region'
+
+  Ec2SubnetPrivate2:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref Ec2Vpc
+      AvailabilityZone: !Select
+        - 1
+        - Fn::GetAZs: !Ref 'AWS::Region'
+      CidrBlock: !Select [4, !Cidr [!GetAtt Ec2Vpc.CidrBlock, 16, 12]]
+      Tags:
+        - Key: Name
+          Value: !Join
+            - '-'
+            - - !Ref Environment
+              - private
+              - !Select
+                - 1
+                - Fn::GetAZs: !Ref 'AWS::Region'
+
+  Ec2SubnetPrivate3:
+    Type: 'AWS::EC2::Subnet'
+    Properties:
+      VpcId: !Ref Ec2Vpc
+      AvailabilityZone: !Select
+        - 2
+        - Fn::GetAZs: !Ref 'AWS::Region'
+      CidrBlock: !Select [5, !Cidr [!GetAtt Ec2Vpc.CidrBlock, 16, 12]]
+      Tags:
+        - Key: Name
+          Value: !Join
+            - '-'
+            - - !Ref Environment
+              - private
+              - !Select
+                - 2
+                - Fn::GetAZs: !Ref 'AWS::Region'
+
+
+  Ec2RouteTablePrivate1:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Join
+            - '-'
+            - - !Ref Environment
+              - private
+              - !Select
+                - 0
+                - Fn::GetAZs: !Ref 'AWS::Region'
+      VpcId: !Ref Ec2Vpc
+
+  Ec2RouteTablePrivate2:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Join
+            - '-'
+            - - !Ref Environment
+              - private
+              - !Select
+                - 1
+                - Fn::GetAZs: !Ref 'AWS::Region'
+      VpcId: !Ref Ec2Vpc
+
+  Ec2RouteTablePrivate3:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Join
+            - '-'
+            - - !Ref Environment
+              - private
+              - !Select
+                - 2
+                - Fn::GetAZs: !Ref 'AWS::Region'
+      VpcId: !Ref Ec2Vpc
+
+  Ec2RouteTablePublic:
+    Type: 'AWS::EC2::RouteTable'
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Join
+            - '-'
+            - - !Ref Environment
+              - public
+      VpcId: !Ref Ec2Vpc
+
+  Ec2RoutePrivate1:
+    Type: 'AWS::EC2::Route'
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref Ec2NatGateway
+      RouteTableId: !Ref Ec2RouteTablePrivate1
+
+  Ec2RoutePrivate2:
+    Type: 'AWS::EC2::Route'
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref Ec2NatGateway
+      RouteTableId: !Ref Ec2RouteTablePrivate2
+
+  Ec2RoutePrivate3:
+    Type: 'AWS::EC2::Route'
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref Ec2NatGateway
+      RouteTableId: !Ref Ec2RouteTablePrivate3
+
+  Ec2InternetGateway:
+    Type: 'AWS::EC2::InternetGateway'
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Join
+            - '-'
+            - - !Ref Environment
+              - igw
+
+  Ec2Eip1:
+    Type: 'AWS::EC2::EIP'
+    Properties:
+      Domain: vpc
+
+  Ec2RouteInternetGateway:
+    Type: 'AWS::EC2::Route'
+    DependsOn: Ec2VPCGatewayAttachment
+    Properties:
+      RouteTableId: !Ref Ec2RouteTablePublic
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref Ec2InternetGateway
+
+  Ec2NatGateway:
+    Type: 'AWS::EC2::NatGateway'
+    Properties:
+      AllocationId: !GetAtt
+        - Ec2Eip1
+        - AllocationId
+      SubnetId: !Ref Ec2SubnetPublic1
+
+  Ec2SubnetRouteTableAssociationPrivate1:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      RouteTableId: !Ref Ec2RouteTablePrivate1
+      SubnetId: !Ref Ec2SubnetPrivate1
+
+  Ec2SubnetRouteTableAssociationPrivate2:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      RouteTableId: !Ref Ec2RouteTablePrivate2
+      SubnetId: !Ref Ec2SubnetPrivate2
+
+  Ec2SubnetRouteTableAssociationPrivate3:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      RouteTableId: !Ref Ec2RouteTablePrivate3
+      SubnetId: !Ref Ec2SubnetPrivate3
+
+  Ec2SubnetRouteTableAssociationPublic1:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      RouteTableId: !Ref Ec2RouteTablePublic
+      SubnetId: !Ref Ec2SubnetPublic1
+
+  Ec2SubnetRouteTableAssociationPublic2:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      RouteTableId: !Ref Ec2RouteTablePublic
+      SubnetId: !Ref Ec2SubnetPublic2
+
+  Ec2SubnetRouteTableAssociationPublic3:
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+    Properties:
+      RouteTableId: !Ref Ec2RouteTablePublic
+      SubnetId: !Ref Ec2SubnetPublic3
+
+  Ec2VPCGatewayAttachment:
+    Type: 'AWS::EC2::VPCGatewayAttachment'
+    Properties:
+      InternetGatewayId: !Ref Ec2InternetGateway
+      VpcId: !Ref Ec2Vpc
+
+  VPNSG:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Enable access to VPN
+      VpcId: !Ref Ec2Vpc
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: !Ref VPNSGAllowIP
+        - IpProtocol: tcp
+          FromPort: '8080'
+          ToPort: '8080'
+          CidrIp: !Ref VPNSGAllowIP
+        - IpProtocol: udp
+          FromPort: '1194'
+          ToPort: '1194'
+          CidrIp: 0.0.0.0/0
+
+Outputs:
+  VPCID:
+    Value: !Ref Ec2Vpc
+    Export:
+      Name: !Join
+        - '-'
+        - - !Ref Environment
+          - VpcId
+  CidrBlock:
+    Value: !Ref CidrBlock
+    Export:
+      Name: !Join
+        - '-'
+        - - !Ref Environment
+          - CidrBlock
+  Subnet1Private:
+    Value: !Ref Ec2SubnetPrivate1
+    Export:
+      Name: !Join
+        - '-'
+        - - !Ref Environment
+          - Ec2SubnetPrivate1
+  Subnet2Private:
+    Value: !Ref Ec2SubnetPrivate2
+    Export:
+      Name: !Join
+        - '-'
+        - - !Ref Environment
+          - Ec2SubnetPrivate2
+  Subnet3Private:
+    Value: !Ref Ec2SubnetPrivate3
+    Export:
+      Name: !Join
+        - '-'
+        - - !Ref Environment
+          - Ec2SubnetPrivate3
+  Subnet1Public:
+    Value: !Ref Ec2SubnetPublic1
+    Export:
+      Name: !Join
+        - '-'
+        - - !Ref Environment
+          - Ec2SubnetPublic1
+  Subnet2Public:
+    Value: !Ref Ec2SubnetPublic2
+    Export:
+      Name: !Join
+        - '-'
+        - - !Ref Environment
+          - Ec2SubnetPublic2
+  Subnet3Public:
+    Value: !Ref Ec2SubnetPublic3
+    Export:
+      Name: !Join
+        - '-'
+        - - !Ref Environment
+          - Ec2SubnetPublic3
+  VPNSG:
+    Value: !Ref VPNSG
+    Export:
+      Name: !Join
+        - '-'
+        - - !Ref Environment
+          - VPNSG

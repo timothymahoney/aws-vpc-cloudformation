@@ -344,6 +344,96 @@ Resources:
           ToPort: '1194'
           CidrIp: 0.0.0.0/0
 
+  ParamEc2Vpc:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Name: !Join
+        - '-'
+        - - !Ref Environment
+          - VpcId
+      Type: String
+      Value: !Ref Ec2Vpc
+
+  ParamCidrBlock:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Name: !Join
+        - '-'
+        - - !Ref Environment
+          - CidrBlock
+      Type: String
+      Value: !Ref CidrBlock
+
+  ParamSubnetPrivate1:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Name: !Join
+        - '-'
+        - - !Ref Environment
+          - Ec2SubnetPrivate1
+      Type: String
+      Value: !Ref Ec2SubnetPrivate1
+
+  ParamSubnetPrivate2:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Name: !Join
+        - '-'
+        - - !Ref Environment
+          - Ec2SubnetPrivate2
+      Type: String
+      Value: !Ref Ec2SubnetPrivate2
+
+  ParamSubnetPrivate3:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Name: !Join
+        - '-'
+        - - !Ref Environment
+          - Ec2SubnetPrivate3
+      Type: String
+      Value: !Ref Ec2SubnetPrivate3
+
+  ParamSubnetPublic1:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Name: !Join
+        - '-'
+        - - !Ref Environment
+          - Ec2SubnetPublic1
+      Type: String
+      Value: !Ref Ec2SubnetPublic1
+
+  ParamSubnetPublic2:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Name: !Join
+        - '-'
+        - - !Ref Environment
+          - Ec2SubnetPublic2
+      Type: String
+      Value: !Ref Ec2SubnetPublic2
+
+  ParamSubnetPublic3:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Name: !Join
+        - '-'
+        - - !Ref Environment
+          - Ec2SubnetPublic3
+      Type: String
+      Value: !Ref Ec2SubnetPublic3
+
+  ParamVPNSG:
+    Type: "AWS::SSM::Parameter"
+    Properties:
+      Name: !Join
+        - '-'
+        - - !Ref Environment
+          - VPNSG
+      Type: String
+      Value: !Ref VPNSG
+
 Outputs:
   VPCID:
     Value: !Ref Ec2Vpc

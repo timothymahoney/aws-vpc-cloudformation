@@ -27,7 +27,7 @@ The [AWS System Manager Parameter Store](https://docs.aws.amazon.com/systems-man
 per account, per region to enable environment and network separation and keep
 your resources organized.
 
-When used with [Stack Sets]((https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/what-is-cfnstacksets.html),
+When used with [Stack Sets](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/what-is-cfnstacksets.html),
 it allows you to pre-define configuration in your planned accounts and regions,
 so that when the stack set is created, you can have different configurations for
 different resources. This matters when it comes to CIDR Ranges, so that your
@@ -44,7 +44,12 @@ Change these values based on your requirements.
 At the very least, set the `VPNSGALLOWIP` parameter to the IP you desire to be able to access it from.
 
 * NAME corresponds to the name of the Cloudformation Stack.
-* ENVIRONMENT can be whatever you desire, but generally is one of:
+* ENVIRONMENT can be whatever you desire, and will be used by other "child
+  stacks" to connect resources together. For example, the subnets created by this
+  stack are added to the AWS System Manager Parameter Store, and ENVIRONMENT
+  is the identifier that allows the "child stacks" to look up the values of
+  subnets when needed for creating resources like Auto Scaling Groups.
+  It can be whatever you like, but generally is one of:
   * management
   * shared-services
   * development
@@ -54,6 +59,7 @@ At the very least, set the `VPNSGALLOWIP` parameter to the IP you desire to be a
   * staging
   * production
   * your-env-name-here
+
 * CIDRBLOCK is the first IP address in range of ~65K IP Addresses (/16) that will be assigned to your VPC. Do not include the /16, this is appended by the template.
 * VPNSGALLOWIP is the IP Address (or range) that you will allow connection over port 22 and 8080 to the VPN instance. (Created from a separate template, link to come)
   * Your current IP: `curl icanhazip.com`
@@ -114,7 +120,7 @@ aws cloudformation delete-stack \
 
 No output expected.
 
-## The resources this template creates
+#### The resources this template creates
 
 * VPC
 * 3 Public Subnets in 3 separate Availability Zones
@@ -132,6 +138,19 @@ No output expected.
   through the NAT Gateway(s)
   * 1 Subnet Route Table Association for each (3x) Subnet -> Route Table
   connection
+
+#### Cloudformation Outputs and System Manager Parameter Store parameters created
+
+* $ENVIRONMENT-VPCID: Id of the VPC that has been created.
+* $ENVIRONMENT-CidrBlock: Cidr Block of the VPC Used
+* $ENVIRONMENT-Subnet1Private: Private Subnet 1
+* $ENVIRONMENT-Subnet2Private: Private Subnet 2
+* $ENVIRONMENT-Subnet3Private: Private Subnet 3
+* $ENVIRONMENT-Subnet1Public: Public Subnet 1
+* $ENVIRONMENT-Subnet2Public: Public Subnet 2
+* $ENVIRONMENT-Subnet3Public: Public Subnet 3
+* $ENVIRONMENT-VPNSG: VPN Security Group
+
 
 ### Important Notes about Availability Zones
 
@@ -161,6 +180,11 @@ Second, this template uses the [Fn:Cidr](https://docs.aws.amazon.com/AWSCloudFor
 Addresses available in both private and public subnets. This is by design,
 future expansion into new subnets would allow you to choose the next set of CIDR
 Ranges and stand them up without modifying your entire topology.
+
+### Changing from High Availability to Non and vice versa
+
+Adding the extra NAT Gateways and Elastic IPs at a later date has been tested
+and works, as does removing the HA Nat Gateways and moving back to a single one.
 
 ## Expected Costs
 

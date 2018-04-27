@@ -11,6 +11,12 @@ Parameters:
   VPNSGAllowIP:
     Type : 'AWS::SSM::Parameter::Value<String>'
     Default: "VPNSGAllowIP"
+  HA:
+    Type : 'AWS::SSM::Parameter::Value<String>'
+    Default: "HA"
+
+Conditions:
+  CreateNATGatewaysHA: !Equals [ !Ref HA, true ]
 
 Resources:
   Ec2Vpc:
@@ -198,22 +204,23 @@ Resources:
     Type: 'AWS::EC2::Route'
     Properties:
       DestinationCidrBlock: 0.0.0.0/0
-      NatGatewayId: !Ref Ec2NatGateway
+      NatGatewayId: !Ref Ec2NatGateway1
       RouteTableId: !Ref Ec2RouteTablePrivate1
 
   Ec2RoutePrivate2:
     Type: 'AWS::EC2::Route'
     Properties:
       DestinationCidrBlock: 0.0.0.0/0
-      NatGatewayId: !Ref Ec2NatGateway
+      NatGatewayId: !If [CreateNATGatewaysHA, !Ref Ec2NatGateway2, !Ref Ec2NatGateway1]
       RouteTableId: !Ref Ec2RouteTablePrivate2
 
   Ec2RoutePrivate3:
     Type: 'AWS::EC2::Route'
     Properties:
       DestinationCidrBlock: 0.0.0.0/0
-      NatGatewayId: !Ref Ec2NatGateway
+      NatGatewayId: !If [CreateNATGatewaysHA, !Ref Ec2NatGateway3, !Ref Ec2NatGateway1]
       RouteTableId: !Ref Ec2RouteTablePrivate3
+
 
   Ec2InternetGateway:
     Type: 'AWS::EC2::InternetGateway'
@@ -230,6 +237,18 @@ Resources:
     Properties:
       Domain: vpc
 
+  Ec2Eip2:
+    Type: 'AWS::EC2::EIP'
+    Condition: CreateNATGatewaysHA
+    Properties:
+      Domain: vpc
+
+  Ec2Eip3:
+    Type: 'AWS::EC2::EIP'
+    Condition: CreateNATGatewaysHA
+    Properties:
+      Domain: vpc
+
   Ec2RouteInternetGateway:
     Type: 'AWS::EC2::Route'
     DependsOn: Ec2VPCGatewayAttachment
@@ -238,13 +257,31 @@ Resources:
       DestinationCidrBlock: 0.0.0.0/0
       GatewayId: !Ref Ec2InternetGateway
 
-  Ec2NatGateway:
+  Ec2NatGateway1:
     Type: 'AWS::EC2::NatGateway'
     Properties:
       AllocationId: !GetAtt
         - Ec2Eip1
         - AllocationId
       SubnetId: !Ref Ec2SubnetPublic1
+
+  Ec2NatGateway2:
+    Type: 'AWS::EC2::NatGateway'
+    Condition: CreateNATGatewaysHA
+    Properties:
+      AllocationId: !GetAtt
+        - Ec2Eip2
+        - AllocationId
+      SubnetId: !Ref Ec2SubnetPublic2
+
+  Ec2NatGateway3:
+    Type: 'AWS::EC2::NatGateway'
+    Condition: CreateNATGatewaysHA
+    Properties:
+      AllocationId: !GetAtt
+        - Ec2Eip3
+        - AllocationId
+      SubnetId: !Ref Ec2SubnetPublic3
 
   Ec2SubnetRouteTableAssociationPrivate1:
     Type: 'AWS::EC2::SubnetRouteTableAssociation'
